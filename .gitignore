@@ -1,0 +1,12 @@
+# 저장소가 공개(public)이므로 논문 PDF와 번역 결과물은 커밋하지 않는다.
+*.pdf
+papers/
+work/
+output/
+
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/

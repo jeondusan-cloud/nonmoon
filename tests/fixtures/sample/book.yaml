@@ -1,0 +1,129 @@
+# 테스트용 예시 교과서. 내용은 이 저장소를 위해 새로 쓴 짧은 가상 노트이다.
+meta:
+  title: "A Short Note on Doppler-Free Saturated Absorption"
+  title_ko: "도플러 없는 포화 흡수 분광에 관한 짧은 노트"
+  short_title: "포화 흡수 분광 노트"
+  authors: [A. Example, B. Sample]
+  venue: "Example Notes 1, 001 (2026)"
+  year: "2026"
+  doi: ""
+  kind: "예시 노트"
+  source_language: en
+
+intro:
+  one_line: "서로 반대 방향으로 진행하는 펌프 빔과 프로브 빔으로 정지한 원자만 골라내어 도플러 넓어짐 아래에 숨은 좁은 공명을 보는 방법을 설명한다."
+  overview: |
+    실온 원자 증기의 흡수선은 원자들의 열운동 때문에 수백 MHz 넓이로 퍼진다. 이 노트는 **포화 흡수 분광법**이 어떻게 이 넓은 선 안에서 자연 선폭 $\Gamma$ 수준의 좁은 신호를 꺼내는지 설명한다.
+
+    핵심은 같은 레이저에서 나온 두 빔이 반대 방향으로 지나가면, 두 빔 모두와 동시에 공명하는 원자는 속도가 0인 원자뿐이라는 점이다.
+  why_it_matters: |
+    중성원자 실험에서 냉각 레이저의 주파수를 원자 공명에 잠그는 가장 흔한 방법이 바로 포화 흡수 분광이다.
+  learning_goals:
+    - "도플러 넓어짐이 생기는 이유를 속도 분포로 설명할 수 있다."
+    - "램 딥(Lamb dip)이 왜 공명 중심에만 나타나는지 말할 수 있다."
+    - "식 (1)을 써서 도플러 폭을 어림할 수 있다."
+  prerequisites:
+    - title: "도플러 효과"
+      body: |
+        속도 $v$로 빛을 향해 움직이는 원자는 빛의 진동수를 $\nu(1 + v/c)$로 느낀다.
+    - title: "맥스웰-볼츠만 분포"
+      body: |
+        온도 $T$인 기체에서 한 방향 속도 성분은 폭이 $\sqrt{k_B T/m}$인 가우스 분포를 따른다.
+  reading_guide: |
+    먼저 그림 1로 장치 구성을 익힌 뒤 식 (1)과 표를 함께 보면 좋다.
+
+figures:
+  - id: fig1
+    label: "그림 1"
+    label_original: "FIG. 1"
+    page: 1
+    bbox: [0.1, 0.1, 0.9, 0.45]
+    caption_original: "FIG. 1. Probe transmission with and without the pump beam."
+    caption_ko: "펌프 빔이 있을 때와 없을 때의 프로브 투과 신호."
+    explanation: |
+      가로축은 레이저 디튜닝, 세로축은 프로브 투과도다. 펌프가 있으면 넓은 가우스 골짜기 한가운데에 좁은 봉우리가 생긴다.
+
+glossary:
+  - en: "saturated absorption spectroscopy"
+    ko: "포화 흡수 분광법"
+    definition: "강한 펌프 빔으로 흡수를 포화시켜 도플러 넓어짐 없이 좁은 공명을 보는 분광법."
+  - en: "Doppler broadening"
+    ko: "도플러 넓어짐"
+    definition: "원자들의 열운동 속도가 서로 달라 흡수선이 넓게 퍼지는 현상."
+  - en: "probe beam"
+    ko: "프로브 빔"
+    definition: "흡수를 측정하는 약한 빔."
+
+sections:
+  - id: s1
+    number: "I"
+    title: "Introduction"
+    title_ko: "서론"
+    summary: "열운동이 흡수선을 넓히는 이유와, 이를 피해 가는 아이디어를 소개한다."
+    blocks:
+      - type: paragraph
+        original: |
+          Atoms in a room-temperature vapor move with a broad distribution of velocities, so the absorption line is Doppler broadened to several hundred MHz (Fig. 1).
+        translation: |
+          실온 증기 속 원자들은 넓은 속도 분포로 움직이므로 흡수선은 수백 MHz 폭으로 **도플러 넓어짐**을 겪는다(그림 1).
+        notes:
+          - kind: intuition
+            title: "왜 '넓어짐'인가"
+            body: |
+              원자마다 느끼는 레이저 진동수가 다르니, 각 원자의 좁은 선이 조금씩 다른 곳에 놓여 겹쳐진다. 합친 모양이 속도 분포를 그대로 닮는다.
+      - type: figure
+        id: fig1
+      - type: equation
+        number: "1"
+        latex: '\Delta\nu_D = \frac{\nu_0}{c}\sqrt{\frac{8 k_B T \ln 2}{m}}'
+        explanation: |
+          도플러 폭(반치전폭)은 공명 진동수 $\nu_0$에 비례하고, 온도의 제곱근에 비례한다.
+        symbols:
+          - symbol: '\nu_0'
+            meaning: "공명 진동수"
+          - symbol: 'k_B'
+            meaning: "볼츠만 상수"
+  - id: s2
+    number: "II"
+    title: "Pump and probe"
+    title_ko: "펌프와 프로브"
+    summary: "두 빔이 같은 원자 무리와 공명하는 조건을 따진다."
+    blocks:
+      - type: heading
+        original: "A. Velocity classes"
+        ko: "가. 속도 무리"
+      - type: paragraph
+        original: |
+          Only atoms with $v = 0$ interact with both beams at the same time; this produces the Lamb dip in Eq. (1) language [1, 2].
+        translation: |
+          두 빔과 동시에 상호작용하는 원자는 $v = 0$인 원자뿐이며, 이것이 램 딥을 만든다 [1, 2]. 식 (1)의 폭보다 훨씬 좁다.
+      - type: table
+        caption_original: "TABLE I. Typical numbers for rubidium."
+        caption_ko: "표 I. 루비듐의 대표적인 값."
+        header: ["물리량", "값"]
+        rows:
+          - ["자연 선폭 $\\Gamma/2\\pi$", "6.07 MHz"]
+          - ["도플러 폭 (300 K)", "약 510 MHz"]
+      - type: note
+        kind: lab
+        title: "실험실에서는"
+        body: |
+          - 펌프와 프로브가 셀 안에서 겹치도록 조리개 두 개로 정렬한다.
+          - 펌프 세기는 포화 세기 근처로 맞춘다.
+    key_points:
+      - "정지한 원자만 두 빔 모두와 공명한다."
+      - "램 딥의 폭은 자연 선폭 $\\Gamma$ 수준이다."
+
+summary:
+  key_points:
+    - "포화 흡수 분광법은 도플러 넓어짐 아래의 좁은 공명을 보여 준다."
+  questions:
+    - q: "온도가 4배가 되면 도플러 폭은 몇 배가 되는가?"
+      a: "식 (1)에서 $\\Delta\\nu_D \\propto \\sqrt{T}$이므로 2배가 된다."
+  further_reading:
+    - ref: "[1]"
+      why: "램 딥을 처음 설명한 고전적인 논의."
+
+references:
+  - "[1] W. E. Lamb, Phys. Rev. 134, A1429 (1964)."
+  - "[2] T. W. Hänsch, Example reference."
