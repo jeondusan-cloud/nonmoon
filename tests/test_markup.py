@@ -52,6 +52,22 @@ def test_terms_link_once_per_scope_and_refs():
     assert 'class="term"' in en and 'href="#fig-fig2"' in en
 
 
+def test_panel_refs_prefer_the_panel():
+    linker = Linker([], figures={"4": "fig-a", "4c": "fig-b"})
+    html = render_inline("Fig. 4(c), 그림 4(a), 그림 4", linker)
+    assert '<a class="xref" data-ref="fig" href="#fig-b">Fig. 4(c)</a>' in html
+    assert html.count('href="#fig-a"') == 2
+
+
+def test_display_math_inside_a_paragraph_gets_its_own_block():
+    html = render("앞 문장\n$$a = b$$\n뒤 문장.")
+    assert html.startswith('<p>앞 문장</p><div class="math-block"><span class="math-display" data-tex="a = b">')
+    assert html.endswith("<p>뒤 문장.</p>")
+    # Inside **...** it stays put, so the tags still pair up.
+    bold = render("**굵게 $$x$$ 끝**")
+    assert "math-block" not in bold and bold.count("<strong>") == bold.count("</strong>") == 1
+
+
 def test_unknown_refs_stay_plain():
     linker = Linker([], figures={"1": "fig-fig1"})
     assert "xref" not in render_inline("그림 7을 보라", linker)

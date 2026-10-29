@@ -59,6 +59,18 @@ def test_unplaced_figure_goes_after_first_mention():
     assert first_para < html.index('id="fig-fig1"') < html.index('id="eq-1"')
 
 
+def test_figure_refs_reach_the_right_panel():
+    b = books.validate(books.load(FIXTURE))
+    b["figures"][0]["label_original"] = "FIG. 4(a)–(b)"
+    b["figures"].append(dict(b["figures"][0], id="fig4cd", label_original="FIG. 4(c)–(d)"))
+    para = next(x for x in b["sections"][0]["blocks"] if x["type"] == "paragraph")
+    para["translation"] = "그림 4(d)는 그림 4(b)와 다르고, 그림 4는 둘을 모두 담는다."
+    html = render_book(b, {}, artifact=False)
+    assert '<a class="xref" data-ref="fig" href="#fig-fig4cd">그림 4(d)</a>' in html
+    assert '<a class="xref" data-ref="fig" href="#fig-fig1">그림 4(b)</a>' in html
+    assert '<a class="xref" data-ref="fig" href="#fig-fig1">그림 4</a>' in html
+
+
 def test_korean_source_has_no_translation_controls():
     b = books.validate(books.load(FIXTURE))
     b["meta"]["source_language"] = "ko"

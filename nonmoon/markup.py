@@ -133,7 +133,9 @@ class Linker:
         if self.figures:
             text = re.sub(
                 r"(그림|Figs?\.|FIGS?\.|Figures?)\s?(\d+)(?:\s?\(([a-z])\))?",
-                lambda m: self._ref(m, self.figures.get(m.group(2)), "fig"),
+                lambda m: self._ref(
+                    m, self.figures.get(m.group(2) + (m.group(3) or "")) or self.figures.get(m.group(2)), "fig"
+                ),
                 text,
             )
         if self.equations:
@@ -214,6 +216,13 @@ def _inline(text: str, linker: Linker | None, english: bool) -> str:
     return re.sub(f"{_PH}c(\\d+){_PH}", lambda m: codes[int(m.group(1))], text)
 
 
+def _balanced(html_text: str) -> bool:
+    """True when every inline tag opened in ``html_text`` is also closed."""
+    return all(
+        html_text.count(f"<{tag}") == html_text.count(f"</{tag}>") for tag in ("strong", "em", "a", "span", "code")
+    )
+
+
 def render_inline(text: str, linker: Linker | None = None, english: bool = False) -> str:
     """One line of text (titles, list items): no paragraphs or lists."""
     protected, found = protect_math(text or "")
@@ -233,14 +242,24 @@ def render(text: str, linker: Linker | None = None, english: bool = False) -> st
         list_tag = ""
 
         def flush_paragraph():
-            if paragraph:
-                body = _inline(" ".join(s.strip() for s in paragraph), linker, english)
-                only_math = re.fullmatch(f"{_PH}\\d+{_PH}", body.strip())
-                if only_math and found[int(body.strip()[1:-1])][1]:
-                    out.append(f'<div class="math-block">{body.strip()}</div>')
+            if not paragraph:
+                return
+            body = _inline(" ".join(s.strip() for s in paragraph), linker, english)
+            # Display math is a block of its own: close the paragraph around it,
+            # unless it sits inside inline markup such as **...**.
+            text: list[str] = []
+            for part in re.split(f"({_PH}\\d+{_PH})", body):
+                index = re.fullmatch(f"{_PH}(\\d+){_PH}", part)
+                if index and found[int(index.group(1))][1] and _balanced("".join(text)):
+                    if "".join(text).strip():
+                        out.append(f"<p>{''.join(text).strip()}</p>")
+                    out.append(f'<div class="math-block">{part}</div>')
+                    text = []
                 else:
-                    out.append(f"<p>{body}</p>")
-                paragraph.clear()
+                    text.append(part)
+            if "".join(text).strip():
+                out.append(f"<p>{''.join(text).strip()}</p>")
+            paragraph.clear()
 
         def flush_list():
             nonlocal list_tag

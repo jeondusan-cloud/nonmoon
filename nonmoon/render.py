@@ -79,9 +79,19 @@ class _Renderer:
 
         fig_numbers = {}
         for fig in book["figures"]:
-            number = re.search(r"\d+", fig["label_original"] or fig["label"] or fig["id"])
-            if number:
-                fig_numbers[number.group(0)] = "fig-" + _anchor(fig["id"])
+            label = fig["label_original"] or fig["label"] or fig["id"]
+            number = re.search(r"\d+", label)
+            if not number:
+                continue
+            anchor = "fig-" + _anchor(fig["id"])
+            # A figure split into panels: "FIG. 4(a)–(c)" answers to 4a, 4b and 4c.
+            letters = re.findall(r"\(([a-z])\)", label)
+            span = re.search(r"\(([a-z])\)\s*[–~-]\s*\(([a-z])\)", label)
+            if span:
+                letters += [chr(c) for c in range(ord(span.group(1)), ord(span.group(2)) + 1)]
+            for letter in letters:
+                fig_numbers.setdefault(number.group(0) + letter, anchor)
+            fig_numbers.setdefault(number.group(0), anchor)
         eq_numbers = {}
         for _, block in self._blocks():
             if block["type"] == "equation" and block["number"]:
