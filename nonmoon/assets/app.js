@@ -404,7 +404,7 @@
     return new Blob([bytes], { type: m[1] });
   }
 
-  function buildAskPanel(host, blk, sample, canImages) {
+  function buildAskPanel(host, blk, sample, imageLimits) {
     const panel = document.createElement("div");
     panel.className = "ask";
     const isGlobal = blk === "global";
@@ -469,10 +469,12 @@
           renderMath(answer);
         },
       };
-      if (!turns.length && canImages && host.classList.contains("fig")) {
+      if (!turns.length && imageLimits && host.classList.contains("fig")) {
         const img = host.querySelector("img");
         const blob = img ? dataUriToBlob(img.getAttribute("src")) : null;
-        if (blob) opts.images = [blob];
+        const fits = blob && blob.size <= imageLimits.maxInputBytes &&
+          (!imageLimits.mediaTypes || imageLimits.mediaTypes.indexOf(blob.type) >= 0);
+        if (fits) opts.images = [blob];
       }
       try {
         const res = await sample(nextTurns, opts);
@@ -522,12 +524,12 @@
       sample = null;
     }
     if (!sample) return;
-    let canImages = false;
+    let imageLimits = null;
     try {
       const lim = await sample.limits();
-      canImages = !!(lim && lim.images);
+      imageLimits = (lim && lim.images) || null;
     } catch (e) {
-      canImages = false;
+      imageLimits = null;
     }
     app.classList.add("can-ask");
     document.addEventListener("click", function (ev) {
@@ -541,7 +543,7 @@
         btn.setAttribute("aria-expanded", "false");
         return;
       }
-      panel = buildAskPanel(host, host.dataset.blk, sample, canImages);
+      panel = buildAskPanel(host, host.dataset.blk, sample, imageLimits);
       host.appendChild(panel);
       btn.setAttribute("aria-expanded", "true");
       panel.querySelector("textarea").focus();
@@ -549,7 +551,7 @@
     const globalHost = document.getElementById("ask-global");
     if (globalHost) {
       globalHost.hidden = false;
-      globalHost.appendChild(buildAskPanel(globalHost, "global", sample, false));
+      globalHost.appendChild(buildAskPanel(globalHost, "global", sample, null));
     }
   })();
 })();

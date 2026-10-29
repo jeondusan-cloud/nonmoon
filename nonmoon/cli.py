@@ -25,10 +25,12 @@ def slug_for(pdf: Path) -> str:
 
 
 def read_profile(path: str | None) -> str:
+    """The reader profile as Claude sees it: headings and <!-- notes --> are for the person editing it."""
     candidates = [Path(path)] if path else [Path("profile.md"), PACKAGE_PROFILE]
     for candidate in candidates:
         if candidate.is_file():
-            return candidate.read_text(encoding="utf-8")
+            text = re.sub(r"<!--.*?-->", "", candidate.read_text(encoding="utf-8"), flags=re.DOTALL)
+            return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#")).strip()
     if path:
         raise SystemExit(f"독자 프로필 파일을 찾을 수 없습니다: {path}")
     return ""

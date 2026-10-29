@@ -42,3 +42,9 @@ def test_build_dry_run_prepares_only(tmp_path, paper, capsys):
     work = tmp_path / "w"
     assert cli.main(["build", str(paper), "--work", str(work), "--dry-run"]) == 0
     assert (work / "source.pdf").is_file() and not (work / "api").exists()
+
+
+def test_profile_drops_headings_and_comments(tmp_path):
+    f = tmp_path / "me.md"
+    f.write_text("# 독자\n\n<!-- 나만 보는\n메모 -->\n- 리드베리 원자를 공부한다.\n", encoding="utf-8")
+    assert cli.read_profile(str(f)) == "- 리드베리 원자를 공부한다."
