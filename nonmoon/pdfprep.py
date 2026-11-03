@@ -28,7 +28,7 @@ from pathlib import Path
 
 import pymupdf
 
-CAPTION_RE = re.compile(r"^\s*(FIG\.?|Fig\.?|FIGURE|Figure|그림)\s*(\d+)", re.MULTILINE)
+CAPTION_RE = re.compile(r"^\s*(FIG\.?|Fig\.?|FIGURE|Figure|Rys\.?|Abb\.?|Рис\.?|그림|図)\s*(\d+)", re.MULTILINE)
 VIEW_EDGE = 1600  # px, long edge of the page images written by prepare
 CROP_EDGE = 2000  # px, cap on the long edge of a figure crop
 
@@ -202,13 +202,47 @@ def prepare(pdf: str | Path, workdir: str | Path, pages: str | None = None) -> d
     return info
 
 
+def _text_blocks(page: pymupdf.Page) -> list[tuple[pymupdf.Rect, str]]:
+    """Text blocks as (box, text), the box covering only lines that have visible text."""
+    blocks = []
+    for b in page.get_text("dict")["blocks"]:
+        if b.get("type") != 0:
+            continue
+        box, lines = None, []
+        for line in b["lines"]:
+            text = "".join(span["text"] for span in line["spans"])
+            if text.strip():
+                box = pymupdf.Rect(line["bbox"]) if box is None else box | pymupdf.Rect(line["bbox"])
+                lines.append(text)
+        if box is not None and not box.is_empty:
+            blocks.append((box, "\n".join(lines)))
+    return blocks
+
+
 def figure_rect(page: pymupdf.Page, bbox: list[float]) -> pymupdf.Rect:
-    """The page area for a figure box, snapped outwards to nearby graphics."""
+    """The page area for a figure box, snapped outwards to nearby graphics.
+
+    Captions and running text that the box does not touch are kept out: graphics that enclose such a
+    caption (page frames, backgrounds) are not followed, and the result is trimmed back to that text.
+    """
     target = _denorm(bbox, page)
     w, h = page.rect.width, page.rect.height
     grown = pymupdf.Rect(target.x0 - 0.02 * w, target.y0 - 0.02 * h, target.x1 + 0.02 * w, target.y1 + 0.02 * h)
     rect = pymupdf.Rect(target)
-    picked = [r for r in graphics_rects(page) if (r & grown).get_area() >= 0.5 * r.get_area()]
+    outside, captions = [], []
+    for block, text in _text_blocks(page):
+        if block.intersects(target):
+            continue
+        is_caption = bool(CAPTION_RE.match(text))
+        if is_caption:
+            captions.append(block)
+        if is_caption or len(text.strip()) > 60:
+            outside.append(block)
+    picked = [
+        r for r in graphics_rects(page)
+        if (r & grown).get_area() >= 0.5 * r.get_area()
+        and not any((r & c).get_area() >= 0.5 * c.get_area() for c in captions)
+    ]
     for r in picked:
         rect |= r
     if picked:
@@ -224,7 +258,19 @@ def figure_rect(page: pymupdf.Page, bbox: list[float]) -> pymupdf.Rect:
             if block.intersects(near) and (block & grown).get_area() >= 0.5 * block.get_area():
                 rect |= block
     pad = 4
-    return pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad) & page.rect
+    rect = pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad) & page.rect
+    for block in outside:
+        if not block.intersects(rect):
+            continue
+        if block.y0 >= target.y1:
+            rect.y1 = min(rect.y1, block.y0 - 1)
+        elif block.y1 <= target.y0:
+            rect.y0 = max(rect.y0, block.y1 + 1)
+        elif block.x0 >= target.x1:
+            rect.x1 = min(rect.x1, block.x0 - 1)
+        elif block.x1 <= target.x0:
+            rect.x0 = max(rect.x0, block.x1 + 1)
+    return rect
 
 
 def crop(doc: pymupdf.Document, page_number: int, bbox: list[float] | None) -> tuple[bytes, str]:
